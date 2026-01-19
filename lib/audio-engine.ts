@@ -1,0 +1,224 @@
+/**
+ * AudioCrossfadeEngine
+ *
+ * Manages audio playback with smooth crossfading between two audio elements
+ * using Web Audio API's GainNode for precise volume control.
+ */
+
+export class AudioCrossfadeEngine {
+  private audioContext: AudioContext | null = null;
+  private audioElements: [HTMLAudioElement, HTMLAudioElement];
+  private gainNodes: [GainNode | null, GainNode | null] = [null, null];
+  private sourceNodes: [MediaElementAudioSourceNode | null, MediaElementAudioSourceNode | null] = [null, null];
+  private activeIndex: 0 | 1 = 0;
+  private isInitialized = false;
+
+  constructor() {
+    // Create two audio elements for alternating playback
+    this.audioElements = [
+      this.createAudioElement(),
+      this.createAudioElement(),
+    ];
+  }
+
+  private createAudioElement(): HTMLAudioElement {
+    const audio = new Audio();
+    audio.crossOrigin = "anonymous";
+    audio.preload = "none";
+    return audio;
+  }
+
+  /**
+   * Initialize the Web Audio API context and nodes
+   * Must be called after user interaction due to browser autoplay policies
+   */
+  async initialize(): Promise<void> {
+    if (this.isInitialized) return;
+
+    try {
+      // Create audio context
+      this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+
+      // Create source nodes from audio elements
+      this.sourceNodes[0] = this.audioContext.createMediaElementSource(this.audioElements[0]);
+      this.sourceNodes[1] = this.audioContext.createMediaElementSource(this.audioElements[1]);
+
+      // Create gain nodes for volume control
+      this.gainNodes[0] = this.audioContext.createGain();
+      this.gainNodes[1] = this.audioContext.createGain();
+
+      // Connect the audio graph: source -> gain -> destination
+      this.sourceNodes[0].connect(this.gainNodes[0]);
+      this.sourceNodes[1].connect(this.gainNodes[1]);
+      this.gainNodes[0].connect(this.audioContext.destination);
+      this.gainNodes[1].connect(this.audioContext.destination);
+
+      // Set initial volumes (active starts at 1, inactive at 0)
+      this.gainNodes[0].gain.value = 1;
+      this.gainNodes[1].gain.value = 0;
+
+      this.isInitialized = true;
+    } catch (error) {
+      console.error("Failed to initialize audio engine:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Load and play a stream on the currently active audio element
+   */
+  async playStream(streamUrl: string): Promise<void> {
+    if (!this.isInitialized) {
+      await this.initialize();
+    }
+
+    const audio = this.audioElements[this.activeIndex];
+    const gainNode = this.gainNodes[this.activeIndex];
+
+    if (!gainNode || !this.audioContext) {
+      throw new Error("Audio context not initialized");
+    }
+
+    try {
+      // Load the stream
+      audio.src = streamUrl;
+      audio.load();
+
+      // Set volume to full
+      gainNode.gain.setValueAtTime(1, this.audioContext.currentTime);
+
+      // Play the stream
+      await audio.play();
+    } catch (error) {
+      console.error("Failed to play stream:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Crossfade to a new stream
+   * Loads the new stream in the inactive element and smoothly transitions
+   */
+  async crossfadeTo(streamUrl: string, duration: number = 1.8): Promise<void> {
+    if (!this.isInitialized) {
+      await this.initialize();
+    }
+
+    if (!this.audioContext) {
+      throw new Error("Audio context not initialized");
+    }
+
+    const currentIndex = this.activeIndex;
+    const nextIndex: 0 | 1 = currentIndex === 0 ? 1 : 0;
+
+    const currentAudio = this.audioElements[currentIndex];
+    const nextAudio = this.audioElements[nextIndex];
+    const currentGain = this.gainNodes[currentIndex];
+    const nextGain = this.gainNodes[nextIndex];
+
+    if (!currentGain || !nextGain) {
+      throw new Error("Gain nodes not initialized");
+    }
+
+    try {
+      // Load the new stream
+      nextAudio.src = streamUrl;
+      nextAudio.load();
+
+      // Start playing the new stream (at volume 0)
+      nextGain.gain.setValueAtTime(0, this.audioContext.currentTime);
+      await nextAudio.play();
+
+      // Perform crossfade
+      const now = this.audioContext.currentTime;
+      const fadeEndTime = now + duration;
+
+      // Fade out current stream
+      currentGain.gain.setValueAtTime(currentGain.gain.value, now);
+      currentGain.gain.linearRampToValueAtTime(0, fadeEndTime);
+
+      // Fade in next stream
+      nextGain.gain.setValueAtTime(0, now);
+      nextGain.gain.linearRampToValueAtTime(1, fadeEndTime);
+
+      // Wait for crossfade to complete
+      await new Promise((resolve) => setTimeout(resolve, duration * 1000));
+
+      // Stop and cleanup the old stream
+      currentAudio.pause();
+      currentAudio.src = "";
+
+      // Switch active index
+      this.activeIndex = nextIndex;
+    } catch (error) {
+      console.error("Failed to crossfade:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Pause playback
+   */
+  pause(): void {
+    this.audioElements[this.activeIndex].pause();
+  }
+
+  /**
+   * Resume playback
+   */
+  async resume(): Promise<void> {
+    try {
+      await this.audioElements[this.activeIndex].play();
+    } catch (error) {
+      console.error("Failed to resume playback:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get the current playback state
+   */
+  isPlaying(): boolean {
+    return !this.audioElements[this.activeIndex].paused;
+  }
+
+  /**
+   * Preload a stream in the inactive audio element
+   */
+  preload(streamUrl: string): void {
+    const nextIndex: 0 | 1 = this.activeIndex === 0 ? 1 : 0;
+    const nextAudio = this.audioElements[nextIndex];
+    nextAudio.src = streamUrl;
+    nextAudio.load();
+  }
+
+  /**
+   * Clean up resources
+   */
+  destroy(): void {
+    this.audioElements.forEach((audio) => {
+      audio.pause();
+      audio.src = "";
+    });
+
+    if (this.audioContext) {
+      this.audioContext.close();
+    }
+
+    this.isInitialized = false;
+  }
+
+  /**
+   * Add event listener to active audio element
+   */
+  addEventListener(event: string, handler: EventListener): void {
+    this.audioElements[this.activeIndex].addEventListener(event, handler);
+  }
+
+  /**
+   * Remove event listener from active audio element
+   */
+  removeEventListener(event: string, handler: EventListener): void {
+    this.audioElements[this.activeIndex].removeEventListener(event, handler);
+  }
+}
