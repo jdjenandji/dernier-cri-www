@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useRef } from "react";
 import type { Station } from "@/types/station";
 import { YouTubeLoopPlayer, extractYouTubeVideoId } from "@/components/YouTubeLoopPlayer";
 import Image from "next/image";
@@ -22,30 +21,18 @@ export function VideoCarousel({
   dragOffset = 0,
   isDragging = false
 }: VideoCarouselProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  // Update scroll position when current station changes or drag offset updates
-  useEffect(() => {
-    if (!containerRef.current) return;
-
-    const translateY = -currentIndex * 100;
-    const dragOffsetPercent = (dragOffset / window.innerHeight) * 100;
-
-    containerRef.current.style.transform = `translateY(calc(${translateY}% + ${dragOffset}px))`;
-
-    // Disable transitions during drag for immediate feedback
-    if (isDragging) {
-      containerRef.current.style.transition = 'none';
-    } else {
-      containerRef.current.style.transition = `transform ${transitionDuration}ms cubic-bezier(0.4, 0, 0.2, 1)`;
-    }
-  }, [currentIndex, dragOffset, isDragging, transitionDuration]);
+  // Calculate transform directly for immediate feedback (no useEffect delay)
+  const translateY = -currentIndex * 100;
+  const transform = `translateY(calc(${translateY}% + ${dragOffset}px))`;
+  const transition = isDragging 
+    ? 'none' 
+    : `transform ${transitionDuration}ms cubic-bezier(0.4, 0, 0.2, 1)`;
 
   return (
-    <div className="absolute inset-0 overflow-hidden">
+    <div className="absolute inset-0 overflow-hidden touch-none">
       <div
-        ref={containerRef}
         className="relative w-full h-full will-change-transform"
+        style={{ transform, transition }}
       >
         {stations.map((station, index) => {
           const videoId = station.video_url

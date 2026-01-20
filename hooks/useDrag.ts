@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 
 // Animation and behavior constants
-const DRAG_THRESHOLD = 0.3; // 30% of screen height to trigger snap
-const VELOCITY_THRESHOLD = 0.5; // px/ms for flick detection
-const RUBBER_BAND_MAX = 100; // max px of overscroll resistance
+const DRAG_THRESHOLD = 0.15; // 15% of screen height to trigger snap
+const VELOCITY_THRESHOLD = 0.25; // px/ms for flick detection
+const RUBBER_BAND_MAX = 150; // max px of overscroll resistance
 
 interface DragOptions {
   onNext?: () => void;
