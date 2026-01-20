@@ -10,6 +10,11 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : "http://localhost:3000"
+  ),
   title: "dernier cri live",
   description: "TikTok-style radio streaming - swipe to discover new stations from around the world",
   keywords: ["radio", "streaming", "live", "music", "global", "stations", "ambient"],
@@ -18,11 +23,20 @@ export const metadata: Metadata = {
     title: "dernier cri live",
     description: "Discover global radio stations with a simple swipe",
     type: "website",
+    images: [
+      {
+        url: "/og-image.jpg",
+        width: 600,
+        height: 600,
+        alt: "dernier cri live",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "dernier cri live",
     description: "Discover global radio stations with a simple swipe",
+    images: ["/og-image.jpg"],
   },
 };
 
