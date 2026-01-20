@@ -109,6 +109,37 @@ export function YouTubeLoopPlayer({
     }
   }, [effectiveStart, effectiveEnd]);
 
+  // Handle page visibility changes (mobile tab switching, app backgrounding)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible" && playerRef.current) {
+        // Small delay to let the browser fully restore the tab
+        setTimeout(() => {
+          if (!playerRef.current) return;
+          
+          try {
+            const state = playerRef.current.getPlayerState();
+            const currentTime = playerRef.current.getCurrentTime();
+            
+            // Resume if paused, cued, buffering, or in any non-playing state
+            if (state !== window.YT?.PlayerState?.PLAYING) {
+              // Seek to current position to "kick" the player out of frozen state
+              playerRef.current.seekTo(currentTime || effectiveStart, true);
+              playerRef.current.playVideo();
+            }
+          } catch {
+            // Player might not be ready
+          }
+        }, 100);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [effectiveStart]);
+
   useEffect(() => {
     let mounted = true;
 
