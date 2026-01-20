@@ -10,32 +10,42 @@ interface VideoCarouselProps {
   currentIndex: number;
   isActive: boolean;
   transitionDuration?: number;
+  dragOffset?: number;
+  isDragging?: boolean;
 }
 
 export function VideoCarousel({
   stations,
   currentIndex,
   isActive,
-  transitionDuration = 700
+  transitionDuration = 700,
+  dragOffset = 0,
+  isDragging = false
 }: VideoCarouselProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Update scroll position when current station changes
+  // Update scroll position when current station changes or drag offset updates
   useEffect(() => {
     if (!containerRef.current) return;
 
     const translateY = -currentIndex * 100;
-    containerRef.current.style.transform = `translateY(${translateY}%)`;
-  }, [currentIndex]);
+    const dragOffsetPercent = (dragOffset / window.innerHeight) * 100;
+
+    containerRef.current.style.transform = `translateY(calc(${translateY}% + ${dragOffset}px))`;
+
+    // Disable transitions during drag for immediate feedback
+    if (isDragging) {
+      containerRef.current.style.transition = 'none';
+    } else {
+      containerRef.current.style.transition = `transform ${transitionDuration}ms cubic-bezier(0.4, 0, 0.2, 1)`;
+    }
+  }, [currentIndex, dragOffset, isDragging, transitionDuration]);
 
   return (
     <div className="absolute inset-0 overflow-hidden">
       <div
         ref={containerRef}
         className="relative w-full h-full will-change-transform"
-        style={{
-          transition: `transform ${transitionDuration}ms ease-in-out`,
-        }}
       >
         {stations.map((station, index) => {
           const videoId = station.video_url

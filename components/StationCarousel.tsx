@@ -7,7 +7,7 @@ import { ErrorState } from "./ErrorState";
 import { StationSidebar } from "./StationSidebar";
 import { useStationNavigation } from "@/contexts/StationContext";
 import { useAudio } from "@/contexts/AudioContext";
-import { useSwipe } from "@/hooks/useSwipe";
+import { useDrag } from "@/hooks/useDrag";
 import { useKeyboardNav } from "@/hooks/useKeyboardNav";
 
 export function StationCarousel() {
@@ -65,6 +65,9 @@ export function StationCarousel() {
     }
   }, [nextStation, isPlaying, preloadStation]);
 
+  // Transition duration constant for sync between animations
+  const TRANSITION_DURATION = 400; // ms - faster, snappier feel
+
   // Handle station navigation
   const handleNext = useCallback(() => {
     if (isCrossfading || isTransitioning || !currentStation || !nextStation) return;
@@ -75,7 +78,7 @@ export function StationCarousel() {
     // Reset transitioning state after animation completes
     setTimeout(() => {
       setIsTransitioning(false);
-    }, 750);
+    }, TRANSITION_DURATION);
   }, [isCrossfading, isTransitioning, currentStation, nextStation, goToNext]);
 
   const handlePrevious = useCallback(() => {
@@ -87,7 +90,7 @@ export function StationCarousel() {
     // Reset transitioning state after animation completes
     setTimeout(() => {
       setIsTransitioning(false);
-    }, 750);
+    }, TRANSITION_DURATION);
   }, [isCrossfading, isTransitioning, currentStation, previousStation, goToPrevious]);
 
   // Handle station selection from sidebar
@@ -100,7 +103,7 @@ export function StationCarousel() {
     // Reset transitioning state after animation completes
     setTimeout(() => {
       setIsTransitioning(false);
-    }, 750);
+    }, TRANSITION_DURATION);
   }, [isCrossfading, isTransitioning, currentStation, stations, goToStation]);
 
   // Crossfade when station changes (skip initial load)
@@ -122,10 +125,12 @@ export function StationCarousel() {
     }
   }, [currentStation?.id, hasUserInteracted, crossfadeToStation]);
 
-  // Setup swipe gestures
-  useSwipe({
-    onSwipeUp: handleNext,
-    onSwipeDown: handlePrevious,
+  // Setup drag gestures with real-time tracking
+  const { isDragging, dragOffset } = useDrag({
+    onNext: handleNext,
+    onPrevious: handlePrevious,
+    canGoNext: !!nextStation,
+    canGoPrevious: !!previousStation,
   });
 
   // Setup keyboard navigation
@@ -175,7 +180,9 @@ export function StationCarousel() {
         stations={stations}
         currentIndex={currentIndex >= 0 ? currentIndex : 0}
         isActive={isPlaying}
-        transitionDuration={750}
+        transitionDuration={TRANSITION_DURATION}
+        dragOffset={dragOffset}
+        isDragging={isDragging}
       />
 
       {/* Show "Tap to start" overlay if user hasn't interacted yet */}
