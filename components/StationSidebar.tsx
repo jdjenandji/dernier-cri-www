@@ -1,5 +1,5 @@
-import Image from "next/image";
 import type { Station } from "@/types/station";
+import { VideoEmbed } from "@/components/VideoEmbed";
 
 interface StationSidebarProps {
   stations: Station[];
@@ -23,16 +23,20 @@ export function StationSidebar({ stations, currentStation, onStationSelect, isTr
           } ${isTransitioning ? "cursor-not-allowed" : "cursor-pointer"}`}
           aria-label={`Switch to ${station.name}`}
         >
-          <Image
-            src={station.logo_url}
+          <VideoEmbed
+            videoUrl={station.video_url}
+            videoStartTime={station.video_start_time}
+            videoEndTime={station.video_end_time}
+            fallbackImageUrl={station.logo_url}
             alt={station.name}
-            fill
+            width={64}
+            height={64}
+            priority={false}
             className={`object-cover transition-all duration-300 ${
               currentStation?.id === station.id
                 ? "grayscale-0"
                 : "grayscale"
             }`}
-            sizes="64px"
           />
         </button>
       ))}

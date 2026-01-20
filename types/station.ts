@@ -2,6 +2,9 @@ export interface Station {
   id: string;
   name: string;
   logo_url: string;
+  video_url: string | null;
+  video_start_time: number | null;
+  video_end_time: number | null;
   stream_url: string;
   country: string;
   city: string | null;

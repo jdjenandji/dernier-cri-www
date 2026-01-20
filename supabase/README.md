@@ -5,12 +5,16 @@
 1. Go to https://supabase.com and create a new project
 2. Save your project URL and anon key
 
-## 2. Run Migration
+## 2. Run Migrations
 
 1. In your Supabase dashboard, go to the SQL Editor
-2. Copy the contents of `migrations/001_initial_schema.sql`
-3. Paste and run the SQL in the editor
-4. Verify the `stations` table is created with 15 initial stations
+2. Run each migration file in order:
+   - `migrations/001_initial_schema.sql` - Creates stations table with initial data
+   - `migrations/002_add_do_you_radio.sql` - Adds Do!! You!!! Radio station
+   - `migrations/003_add_dream_chimney.sql` - Adds Dream Chimney station
+   - `migrations/004_add_video_url.sql` - Adds video_url column for YouTube embeds
+   - `migrations/005_add_video_times.sql` - Adds video_start_time and video_end_time columns
+3. Verify the `stations` table is created with all stations
 
 ## 3. Configure Environment Variables
 

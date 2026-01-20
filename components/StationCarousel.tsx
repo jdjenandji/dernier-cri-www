@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { StationView } from "./StationView";
+import { VideoCarousel } from "./VideoCarousel";
 import { LoadingState } from "./LoadingState";
 import { ErrorState } from "./ErrorState";
 import { StationSidebar } from "./StationSidebar";
@@ -14,6 +14,7 @@ export function StationCarousel() {
   const {
     stations,
     currentStation,
+    currentIndex,
     nextStation,
     previousStation,
     isLoading: stationsLoading,
@@ -35,10 +36,15 @@ export function StationCarousel() {
 
   const [hasUserInteracted, setHasUserInteracted] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const [animatingOut, setAnimatingOut] = useState<typeof currentStation>(null);
-  const [animatingIn, setAnimatingIn] = useState<typeof currentStation>(null);
-  const [slideDirection, setSlideDirection] = useState<"up" | "down" | null>(null);
-  const [animationStarted, setAnimationStarted] = useState(false);
+
+  // Preload all audio streams on mount
+  useEffect(() => {
+    if (stations.length > 0) {
+      stations.forEach((station) => {
+        preloadStation(station);
+      });
+    }
+  }, [stations, preloadStation]);
 
   // Handle initial autoplay (requires user interaction)
   useEffect(() => {
@@ -52,9 +58,6 @@ export function StationCarousel() {
     }
   }, [currentStation, hasUserInteracted, isPlaying, audioLoading, playStation]);
 
-  // Keep track of visible station
-  const visibleStation = animatingIn || animatingOut || currentStation;
-
   // Preload next station
   useEffect(() => {
     if (nextStation && isPlaying) {
@@ -67,25 +70,10 @@ export function StationCarousel() {
     if (isCrossfading || isTransitioning || !currentStation || !nextStation) return;
 
     setIsTransitioning(true);
-    setAnimatingOut(currentStation);
-    setAnimatingIn(nextStation);
-    setSlideDirection("up");
-    setAnimationStarted(false);
+    goToNext();
 
-    // Trigger animation after a frame
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        setAnimationStarted(true);
-      });
-    });
-
-    // Change to next station and clean up after animation completes
+    // Reset transitioning state after animation completes
     setTimeout(() => {
-      goToNext();
-      setAnimatingOut(null);
-      setAnimatingIn(null);
-      setSlideDirection(null);
-      setAnimationStarted(false);
       setIsTransitioning(false);
     }, 750);
   }, [isCrossfading, isTransitioning, currentStation, nextStation, goToNext]);
@@ -94,25 +82,10 @@ export function StationCarousel() {
     if (isCrossfading || isTransitioning || !currentStation || !previousStation) return;
 
     setIsTransitioning(true);
-    setAnimatingOut(currentStation);
-    setAnimatingIn(previousStation);
-    setSlideDirection("down");
-    setAnimationStarted(false);
+    goToPrevious();
 
-    // Trigger animation after a frame
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        setAnimationStarted(true);
-      });
-    });
-
-    // Change to previous station and clean up after animation completes
+    // Reset transitioning state after animation completes
     setTimeout(() => {
-      goToPrevious();
-      setAnimatingOut(null);
-      setAnimatingIn(null);
-      setSlideDirection(null);
-      setAnimationStarted(false);
       setIsTransitioning(false);
     }, 750);
   }, [isCrossfading, isTransitioning, currentStation, previousStation, goToPrevious]);
@@ -121,28 +94,11 @@ export function StationCarousel() {
   const handleStationSelect = useCallback((index: number) => {
     if (isCrossfading || isTransitioning || !currentStation || !stations[index]) return;
 
-    const targetStation = stations[index];
-
     setIsTransitioning(true);
-    setAnimatingOut(currentStation);
-    setAnimatingIn(targetStation);
-    setSlideDirection("up");
-    setAnimationStarted(false);
+    goToStation(index);
 
-    // Trigger animation after a frame
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        setAnimationStarted(true);
-      });
-    });
-
-    // Change to selected station and clean up after animation completes
+    // Reset transitioning state after animation completes
     setTimeout(() => {
-      goToStation(index);
-      setAnimatingOut(null);
-      setAnimatingIn(null);
-      setSlideDirection(null);
-      setAnimationStarted(false);
       setIsTransitioning(false);
     }, 750);
   }, [isCrossfading, isTransitioning, currentStation, stations, goToStation]);
@@ -211,13 +167,21 @@ export function StationCarousel() {
     return <ErrorState message="No stations available" />;
   }
 
-  // Show "Tap to start" overlay if user hasn't interacted yet
-  if (!hasUserInteracted) {
-    return (
-      <div className="relative w-full h-full">
-        <StationView station={currentStation} isActive={false} />
+  return (
+    <div className="relative w-full h-full overflow-hidden bg-black">
+      {/* Video carousel - all videos and text rendered and scrolling together */}
+      {/* Render immediately to preload all videos */}
+      <VideoCarousel
+        stations={stations}
+        currentIndex={currentIndex >= 0 ? currentIndex : 0}
+        isActive={isPlaying}
+        transitionDuration={750}
+      />
+
+      {/* Show "Tap to start" overlay if user hasn't interacted yet */}
+      {!hasUserInteracted && (
         <div
-          className="absolute inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center cursor-pointer"
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center cursor-pointer z-[100]"
           onClick={handleStartPlayback}
           role="button"
           aria-label="Tap to start playing"
@@ -235,49 +199,6 @@ export function StationCarousel() {
               Use swipe, arrow keys, or scroll to navigate
             </p>
           </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="relative w-full h-full overflow-hidden bg-black">
-      {/* Station sliding out */}
-      {animatingOut && slideDirection && (
-        <div
-          key={`out-${animatingOut.id}`}
-          className="absolute inset-0 will-change-transform"
-          style={{
-            transform: animationStarted
-              ? (slideDirection === "up" ? "translateY(-100%)" : "translateY(100%)")
-              : "translateY(0)",
-            transition: "transform 700ms ease-in-out",
-          }}
-        >
-          <StationView station={animatingOut} isActive={false} />
-        </div>
-      )}
-
-      {/* Station sliding in */}
-      {animatingIn && slideDirection && (
-        <div
-          key={`in-${animatingIn.id}`}
-          className="absolute inset-0 will-change-transform"
-          style={{
-            transform: animationStarted
-              ? "translateY(0)"
-              : (slideDirection === "up" ? "translateY(100%)" : "translateY(-100%)"),
-            transition: "transform 700ms ease-in-out",
-          }}
-        >
-          <StationView station={animatingIn} isActive={false} />
-        </div>
-      )}
-
-      {/* Current station (when not animating) */}
-      {!isTransitioning && currentStation && (
-        <div key={`current-${currentStation.id}`} className="absolute inset-0">
-          <StationView station={currentStation} isActive={isPlaying} />
         </div>
       )}
 
@@ -308,14 +229,12 @@ export function StationCarousel() {
       </div>
 
       {/* Desktop sidebar with station logos */}
-      {hasUserInteracted && (
-        <StationSidebar
-          stations={stations}
-          currentStation={currentStation}
-          onStationSelect={handleStationSelect}
-          isTransitioning={isTransitioning}
-        />
-      )}
+      <StationSidebar
+        stations={stations}
+        currentStation={currentStation}
+        onStationSelect={handleStationSelect}
+        isTransitioning={isTransitioning}
+      />
     </div>
   );
 }
