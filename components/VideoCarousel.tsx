@@ -74,13 +74,13 @@ export function VideoCarousel({
 
                 {/* Station Info */}
                 <div className="text-center">
-                  <div className="text-sm text-gray-400 space-y-1">
-                    <p>{station.name}</p>
-                    <p>
+                  <div className="text-sm space-y-1">
+                    <p className="text-white">{station.name}</p>
+                    <p className="text-gray-400">
                       {station.city && `${station.city}, `}
                       {station.country}
                     </p>
-                    {station.genre && <p>{station.genre}</p>}
+                    {station.genre && <p className="text-gray-400">{station.genre}</p>}
                   </div>
                 </div>
               </div>

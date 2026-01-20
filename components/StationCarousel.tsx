@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
+import Image from "next/image";
 import { VideoCarousel } from "./VideoCarousel";
 import { LoadingState } from "./LoadingState";
 import { ErrorState } from "./ErrorState";
@@ -200,10 +201,22 @@ export function StationCarousel() {
             }
           }}
         >
-          <div className="text-center">
+          <div className="text-center flex flex-col items-center">
+            <div className="relative w-48 h-48 mb-8">
+              <Image
+                src="/og-image-white.png"
+                alt="Dernier Cri"
+                fill
+                className="object-contain"
+                priority
+              />
+            </div>
             <p className="text-sm">Tap to start</p>
-            <p className="text-sm text-gray-400 mt-2">
-              Use swipe or arrow keys to navigate
+            <p className="text-sm text-gray-400 mt-2 md:hidden">
+              Swipe to navigate
+            </p>
+            <p className="text-sm text-gray-400 mt-2 hidden md:block">
+              Use arrow keys to navigate
             </p>
           </div>
         </div>
@@ -230,9 +243,10 @@ export function StationCarousel() {
         </div>
       )}
 
-      {/* Swipe hint */}
+      {/* Navigation hint */}
       <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 opacity-50 pointer-events-none">
-        <p className="text-xs text-gray-400">Swipe or use arrow keys to navigate</p>
+        <p className="text-xs text-gray-400 md:hidden">Swipe to navigate</p>
+        <p className="text-xs text-gray-400 hidden md:block">Use arrow keys to navigate</p>
       </div>
 
       {/* Desktop sidebar with station logos */}
