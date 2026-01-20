@@ -201,9 +201,9 @@ export function StationCarousel() {
           }}
         >
           <div className="text-center">
-            <p className="text-3xl font-bold">Tap to start</p>
-            <p className="text-gray-400 mt-4">
-              Use swipe, arrow keys, or scroll to navigate
+            <p className="text-sm">Tap to start</p>
+            <p className="text-sm text-gray-400 mt-2">
+              Use swipe or arrow keys to navigate
             </p>
           </div>
         </div>
