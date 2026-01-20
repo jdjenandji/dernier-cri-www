@@ -4,7 +4,6 @@ import { useEffect, useRef, useState, useCallback } from "react";
 const DRAG_THRESHOLD = 0.3; // 30% of screen height to trigger snap
 const VELOCITY_THRESHOLD = 0.5; // px/ms for flick detection
 const RUBBER_BAND_MAX = 100; // max px of overscroll resistance
-const WHEEL_ACCUMULATE_TIME = 150; // ms to accumulate wheel events
 
 interface DragOptions {
   onNext?: () => void;
@@ -40,10 +39,6 @@ export function useDrag({
   const mouseStartTime = useRef<number>(0);
   const isMouseDown = useRef<boolean>(false);
   const lastMouseY = useRef<number>(0);
-
-  // Wheel tracking
-  const wheelTimeout = useRef<NodeJS.Timeout | null>(null);
-  const wheelDelta = useRef<number>(0);
 
   // Velocity tracking
   const velocityRef = useRef<number>(0);
@@ -183,36 +178,6 @@ export function useDrag({
       mouseStartTime.current = 0;
     };
 
-    // Wheel event handler (trackpad/mouse wheel) - debounced and accumulated
-    const handleWheel = (e: WheelEvent) => {
-      e.preventDefault();
-
-      // Accumulate scroll delta
-      wheelDelta.current += e.deltaY;
-
-      // Clear existing timeout
-      if (wheelTimeout.current) {
-        clearTimeout(wheelTimeout.current);
-      }
-
-      // Set new timeout to process accumulated scroll
-      wheelTimeout.current = setTimeout(() => {
-        const accumulated = wheelDelta.current;
-        wheelDelta.current = 0;
-
-        // Only trigger if accumulated scroll exceeds threshold
-        if (Math.abs(accumulated) > 100) {
-          if (accumulated > 0 && canGoNext) {
-            // Scroll down = next station
-            onNext?.();
-          } else if (accumulated < 0 && canGoPrevious) {
-            // Scroll up = previous station
-            onPrevious?.();
-          }
-        }
-      }, WHEEL_ACCUMULATE_TIME);
-    };
-
     // Add event listeners
     document.addEventListener("touchstart", handleTouchStart, { passive: true });
     document.addEventListener("touchmove", handleTouchMove, { passive: !preventDefaultTouchMove });
@@ -220,7 +185,6 @@ export function useDrag({
     document.addEventListener("mousedown", handleMouseDown);
     document.addEventListener("mousemove", handleMouseMove);
     document.addEventListener("mouseup", handleMouseUp);
-    document.addEventListener("wheel", handleWheel, { passive: false });
 
     // Cleanup
     return () => {
@@ -230,12 +194,6 @@ export function useDrag({
       document.removeEventListener("mousedown", handleMouseDown);
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
-      document.removeEventListener("wheel", handleWheel);
-
-      // Clear wheel timeout on cleanup
-      if (wheelTimeout.current) {
-        clearTimeout(wheelTimeout.current);
-      }
     };
   }, [onNext, onPrevious, canGoNext, canGoPrevious, preventDefaultTouchMove, applyRubberBand, handleDragEnd]);
 
