@@ -15,28 +15,28 @@ export const metadata: Metadata = {
       ? `https://${process.env.VERCEL_URL}`
       : "http://localhost:3000"
   ),
-  title: "dernier cri live",
-  description: "TikTok-style radio streaming - swipe to discover new stations from around the world",
+  title: "FOUND FM",
+  description: "Global Radio Stations",
   keywords: ["radio", "streaming", "live", "music", "global", "stations", "ambient"],
-  authors: [{ name: "dernier cri" }],
+  authors: [{ name: "FOUND FM" }],
   openGraph: {
-    title: "dernier cri live",
-    description: "Discover global radio stations with a simple swipe",
+    title: "FOUND FM",
+    description: "Global Radio Stations",
     type: "website",
     images: [
       {
-        url: "/og-image.jpg",
-        width: 600,
-        height: 600,
-        alt: "dernier cri live",
+        url: "/icon.png",
+        width: 1024,
+        height: 1024,
+        alt: "FOUND FM",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "dernier cri live",
-    description: "Discover global radio stations with a simple swipe",
-    images: ["/og-image.jpg"],
+    title: "FOUND FM",
+    description: "Global Radio Stations",
+    images: ["/icon.png"],
   },
 };
 
