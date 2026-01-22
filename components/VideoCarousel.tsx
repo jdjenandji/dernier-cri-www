@@ -1,7 +1,8 @@
 "use client";
 
+import { useEffect, useRef, useImperativeHandle, forwardRef } from "react";
 import type { Station } from "@/types/station";
-import { YouTubeLoopPlayer, extractYouTubeVideoId } from "@/components/YouTubeLoopPlayer";
+import { YouTubeLoopPlayer, YouTubeLoopPlayerRef, extractYouTubeVideoId } from "@/components/YouTubeLoopPlayer";
 import Image from "next/image";
 
 interface VideoCarouselProps {
@@ -13,26 +14,50 @@ interface VideoCarouselProps {
   isDragging?: boolean;
 }
 
-export function VideoCarousel({
+export interface VideoCarouselRef {
+  playAllVideos: () => void;
+}
+
+export const VideoCarousel = forwardRef<VideoCarouselRef, VideoCarouselProps>(function VideoCarousel({
   stations,
   currentIndex,
   isActive,
   transitionDuration = 700,
   dragOffset = 0,
   isDragging = false
-}: VideoCarouselProps) {
-  // Calculate transform directly for immediate feedback (no useEffect delay)
-  const translateY = -currentIndex * 100;
-  const transform = `translateY(calc(${translateY}% + ${dragOffset}px))`;
-  const transition = isDragging 
-    ? 'none' 
-    : `transform ${transitionDuration}ms cubic-bezier(0.4, 0, 0.2, 1)`;
+}, ref) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const videoRefs = useRef<Map<string, YouTubeLoopPlayerRef>>(new Map());
+
+  // Expose method to play all videos
+  useImperativeHandle(ref, () => ({
+    playAllVideos: () => {
+      videoRefs.current.forEach((videoRef) => {
+        videoRef.play();
+      });
+    },
+  }));
+
+  // Update scroll position when current station changes or drag offset updates
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const translateY = -currentIndex * 100;
+    containerRef.current.style.transform = `translateY(calc(${translateY}% + ${dragOffset}px))`;
+
+    // Disable transitions during drag for immediate feedback
+    if (isDragging) {
+      containerRef.current.style.transition = 'none';
+    } else {
+      containerRef.current.style.transition = `transform ${transitionDuration}ms cubic-bezier(0.4, 0, 0.2, 1)`;
+    }
+  }, [currentIndex, dragOffset, isDragging, transitionDuration]);
 
   return (
-    <div className="absolute inset-0 overflow-hidden touch-none">
+    <div className="absolute inset-0 overflow-hidden">
       <div
+        ref={containerRef}
         className="relative w-full h-full will-change-transform"
-        style={{ transform, transition }}
       >
         {stations.map((station, index) => {
           const videoId = station.video_url
@@ -55,6 +80,13 @@ export function VideoCarousel({
                 <div className="relative w-48 h-48 rounded-2xl overflow-hidden shadow-2xl">
                   {videoId ? (
                     <YouTubeLoopPlayer
+                      ref={(el) => {
+                        if (el) {
+                          videoRefs.current.set(station.id, el);
+                        } else {
+                          videoRefs.current.delete(station.id);
+                        }
+                      }}
                       videoId={videoId}
                       startTime={station.video_start_time}
                       endTime={station.video_end_time}
@@ -89,4 +121,4 @@ export function VideoCarousel({
       </div>
     </div>
   );
-}
+});

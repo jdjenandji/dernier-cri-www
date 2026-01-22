@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useImperativeHandle, forwardRef } from "react";
 
 // Declare YouTube IFrame API types
 declare global {
@@ -46,6 +46,10 @@ interface YouTubeLoopPlayerProps {
   className?: string;
 }
 
+export interface YouTubeLoopPlayerRef {
+  play: () => void;
+}
+
 // Track if API is loaded globally
 let apiLoaded = false;
 let apiLoading = false;
@@ -76,12 +80,12 @@ function loadYouTubeAPI(): Promise<void> {
   });
 }
 
-export function YouTubeLoopPlayer({
+export const YouTubeLoopPlayer = forwardRef<YouTubeLoopPlayerRef, YouTubeLoopPlayerProps>(function YouTubeLoopPlayer({
   videoId,
   startTime,
   endTime,
   className = "",
-}: YouTubeLoopPlayerProps) {
+}, ref) {
   const containerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<YTPlayer | null>(null);
   const checkIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -89,6 +93,19 @@ export function YouTubeLoopPlayer({
 
   const effectiveStart = startTime ?? 0;
   const effectiveEnd = endTime ?? null;
+
+  // Expose play method to parent
+  useImperativeHandle(ref, () => ({
+    play: () => {
+      if (playerRef.current) {
+        try {
+          playerRef.current.playVideo();
+        } catch (error) {
+          console.error("Failed to play video:", error);
+        }
+      }
+    },
+  }));
 
   const checkTimeAndLoop = useCallback(() => {
     if (!playerRef.current) return;
@@ -225,7 +242,7 @@ export function YouTubeLoopPlayer({
       style={{ pointerEvents: "none", position: "relative" }}
     />
   );
-}
+});
 
 // Helper to extract video ID from URL
 export function extractYouTubeVideoId(url: string): string | null {

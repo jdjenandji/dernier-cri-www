@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import Image from "next/image";
-import { VideoCarousel } from "./VideoCarousel";
+import { VideoCarousel, VideoCarouselRef } from "./VideoCarousel";
 import { LoadingState } from "./LoadingState";
 import { ErrorState } from "./ErrorState";
 import { StationSidebar } from "./StationSidebar";
@@ -37,6 +37,7 @@ export function StationCarousel() {
 
   const [hasUserInteracted, setHasUserInteracted] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const videoCarouselRef = useRef<VideoCarouselRef>(null);
 
   // Preload all audio streams on mount
   useEffect(() => {
@@ -144,6 +145,8 @@ export function StationCarousel() {
   const handleStartPlayback = async () => {
     if (!currentStation) return;
     setHasUserInteracted(true);
+    // Play all YouTube videos (requires user gesture on mobile)
+    videoCarouselRef.current?.playAllVideos();
     await playStation(currentStation);
   };
 
@@ -178,6 +181,7 @@ export function StationCarousel() {
       {/* Video carousel - all videos and text rendered and scrolling together */}
       {/* Render immediately to preload all videos */}
       <VideoCarousel
+        ref={videoCarouselRef}
         stations={stations}
         currentIndex={currentIndex >= 0 ? currentIndex : 0}
         isActive={isPlaying}
