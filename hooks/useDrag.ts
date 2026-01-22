@@ -98,8 +98,29 @@ export function useDrag({
   }, [dragOffset, shouldSnap, onNext, onPrevious]);
 
   useEffect(() => {
+    // Check if touch started on an interactive element (iframe, button, etc.)
+    const isTouchOnInteractiveElement = (target: EventTarget | null): boolean => {
+      if (!(target instanceof Element)) return false;
+
+      // Check if target or any parent is an iframe or interactive element
+      let element: Element | null = target;
+      while (element) {
+        const tagName = element.tagName.toLowerCase();
+        if (tagName === 'iframe' || tagName === 'button' || tagName === 'a' || tagName === 'input') {
+          return true;
+        }
+        element = element.parentElement;
+      }
+      return false;
+    };
+
     // Touch event handlers
     const handleTouchStart = (e: TouchEvent) => {
+      // Don't start drag if touching an interactive element
+      if (isTouchOnInteractiveElement(e.target)) {
+        return;
+      }
+
       setIsDragging(true);
       touchStartY.current = e.touches[0].clientY;
       lastTouchY.current = e.touches[0].clientY;
@@ -108,6 +129,9 @@ export function useDrag({
     };
 
     const handleTouchMove = (e: TouchEvent) => {
+      // Don't handle move if we didn't start dragging
+      if (touchStartY.current === 0) return;
+
       if (preventDefaultTouchMove) {
         e.preventDefault();
       }
@@ -130,7 +154,10 @@ export function useDrag({
     };
 
     const handleTouchEnd = () => {
-      handleDragEnd(lastTouchY.current, touchStartY.current, touchStartTime.current);
+      // Only handle drag end if we were actually dragging
+      if (touchStartY.current !== 0) {
+        handleDragEnd(lastTouchY.current, touchStartY.current, touchStartTime.current);
+      }
 
       // Reset refs
       touchStartY.current = 0;
