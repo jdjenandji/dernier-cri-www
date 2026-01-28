@@ -29,10 +29,12 @@ export function StationCarousel() {
     isPlaying,
     isLoading: audioLoading,
     isCrossfading,
+    isMuted,
     error: audioError,
     playStation,
     crossfadeToStation,
     preloadStation,
+    toggleMute,
   } = useAudio();
 
   const [hasUserInteracted, setHasUserInteracted] = useState(false);
@@ -239,6 +241,41 @@ export function StationCarousel() {
         onStationSelect={handleStationSelect}
         isAnimating={isAnimating}
       />
+
+      {/* Mute button - bottom right, works on mobile */}
+      {hasUserInteracted && (
+        <button
+          onPointerDown={(e) => {
+            e.stopPropagation();
+          }}
+          onPointerUp={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            toggleMute();
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+          }}
+          className="fixed bottom-6 right-6 w-12 h-12 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center z-[100] touch-none select-none"
+          style={{ touchAction: 'none' }}
+          aria-label={isMuted ? "Unmute" : "Mute"}
+        >
+          {isMuted ? (
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white/80">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+              <line x1="23" y1="9" x2="17" y2="15" />
+              <line x1="17" y1="9" x2="23" y2="15" />
+            </svg>
+          ) : (
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white/80">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+              <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+            </svg>
+          )}
+        </button>
+      )}
     </div>
   );
 }

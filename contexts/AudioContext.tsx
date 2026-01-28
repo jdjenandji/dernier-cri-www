@@ -8,6 +8,7 @@ interface AudioContextType {
   isPlaying: boolean;
   isLoading: boolean;
   isCrossfading: boolean;
+  isMuted: boolean;
   error: string | null;
   currentStation: Station | null;
   playStation: (station: Station) => Promise<void>;
@@ -15,6 +16,7 @@ interface AudioContextType {
   pause: () => void;
   resume: () => Promise<void>;
   preloadStation: (station: Station) => void;
+  toggleMute: () => void;
 }
 
 const AudioContext = createContext<AudioContextType | null>(null);
@@ -24,6 +26,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isCrossfading, setIsCrossfading] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentStation, setCurrentStation] = useState<Station | null>(null);
   const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -124,10 +127,17 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     engine.preload(station.stream_url);
   }, [getAudioEngine]);
 
+  const toggleMute = useCallback(() => {
+    const engine = getAudioEngine();
+    const newMutedState = engine.toggleMute();
+    setIsMuted(newMutedState);
+  }, [getAudioEngine]);
+
   const value: AudioContextType = {
     isPlaying,
     isLoading,
     isCrossfading,
+    isMuted,
     error,
     currentStation,
     playStation,
@@ -135,6 +145,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     pause,
     resume,
     preloadStation,
+    toggleMute,
   };
 
   return <AudioContext.Provider value={value}>{children}</AudioContext.Provider>;

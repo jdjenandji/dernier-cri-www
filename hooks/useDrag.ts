@@ -200,8 +200,31 @@ export function useDrag({
   }, [shouldSnap, animateSpring, onNext, onPrevious]);
 
   useEffect(() => {
+    // Check if target should be ignored (buttons, interactive elements)
+    const shouldIgnoreTarget = (target: EventTarget | null): boolean => {
+      if (!target || !(target instanceof HTMLElement)) return false;
+      
+      // Ignore if target or ancestor has touch-action: none or is a button
+      let el: HTMLElement | null = target;
+      while (el) {
+        if (
+          el.tagName === 'BUTTON' ||
+          el.tagName === 'A' ||
+          el.getAttribute('role') === 'button' ||
+          getComputedStyle(el).touchAction === 'none'
+        ) {
+          return true;
+        }
+        el = el.parentElement;
+      }
+      return false;
+    };
+
     // Touch event handlers
     const handleTouchStart = (e: TouchEvent) => {
+      // Ignore if starting on an interactive element
+      if (shouldIgnoreTarget(e.target)) return;
+
       // Cancel any running animation
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
@@ -222,6 +245,9 @@ export function useDrag({
     };
 
     const handleTouchMove = (e: TouchEvent) => {
+      // Only process if we started a drag
+      if (touchStartY.current === 0) return;
+
       if (preventDefaultTouchMove) {
         e.preventDefault();
       }
@@ -250,6 +276,9 @@ export function useDrag({
     };
 
     const handleTouchEnd = () => {
+      // Only process if we started a drag
+      if (touchStartY.current === 0) return;
+
       handleDragEnd(currentVelocity.current);
       
       // Reset refs
@@ -261,6 +290,9 @@ export function useDrag({
 
     // Mouse event handlers
     const handleMouseDown = (e: MouseEvent) => {
+      // Ignore if starting on an interactive element
+      if (shouldIgnoreTarget(e.target)) return;
+
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
         setIsAnimating(false);
