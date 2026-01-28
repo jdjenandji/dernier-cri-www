@@ -36,7 +36,6 @@ export function StationCarousel() {
   } = useAudio();
 
   const [hasUserInteracted, setHasUserInteracted] = useState(false);
-  const [isTransitioning, setIsTransitioning] = useState(false);
   const videoCarouselRef = useRef<VideoCarouselRef>(null);
 
   // Preload all audio streams on mount
@@ -68,45 +67,24 @@ export function StationCarousel() {
   }, [nextStation, isPlaying, preloadStation]);
 
   // Transition duration constant for sync between animations
-  const TRANSITION_DURATION = 400; // ms - faster, snappier feel
+  const TRANSITION_DURATION = 350; // ms - snappy feel
 
-  // Handle station navigation
+  // Handle station navigation (called by drag hook after animation completes)
   const handleNext = useCallback(() => {
-    if (isCrossfading || isTransitioning || !currentStation || !nextStation) return;
-
-    setIsTransitioning(true);
+    if (!currentStation || !nextStation) return;
     goToNext();
-
-    // Reset transitioning state after animation completes
-    setTimeout(() => {
-      setIsTransitioning(false);
-    }, TRANSITION_DURATION);
-  }, [isCrossfading, isTransitioning, currentStation, nextStation, goToNext]);
+  }, [currentStation, nextStation, goToNext]);
 
   const handlePrevious = useCallback(() => {
-    if (isCrossfading || isTransitioning || !currentStation || !previousStation) return;
-
-    setIsTransitioning(true);
+    if (!currentStation || !previousStation) return;
     goToPrevious();
-
-    // Reset transitioning state after animation completes
-    setTimeout(() => {
-      setIsTransitioning(false);
-    }, TRANSITION_DURATION);
-  }, [isCrossfading, isTransitioning, currentStation, previousStation, goToPrevious]);
+  }, [currentStation, previousStation, goToPrevious]);
 
   // Handle station selection from sidebar
   const handleStationSelect = useCallback((index: number) => {
-    if (isCrossfading || isTransitioning || !currentStation || !stations[index]) return;
-
-    setIsTransitioning(true);
+    if (!currentStation || !stations[index]) return;
     goToStation(index);
-
-    // Reset transitioning state after animation completes
-    setTimeout(() => {
-      setIsTransitioning(false);
-    }, TRANSITION_DURATION);
-  }, [isCrossfading, isTransitioning, currentStation, stations, goToStation]);
+  }, [currentStation, stations, goToStation]);
 
   // Crossfade when station changes (skip initial load)
   const previousStationIdRef = useRef<string | null>(null);
@@ -127,8 +105,8 @@ export function StationCarousel() {
     }
   }, [currentStation?.id, hasUserInteracted, crossfadeToStation]);
 
-  // Setup drag gestures with real-time tracking
-  const { isDragging, dragOffset } = useDrag({
+  // Setup drag gestures with real-time tracking and spring physics
+  const { isDragging, dragOffset, isAnimating } = useDrag({
     onNext: handleNext,
     onPrevious: handlePrevious,
     canGoNext: !!nextStation,
@@ -188,6 +166,7 @@ export function StationCarousel() {
         transitionDuration={TRANSITION_DURATION}
         dragOffset={dragOffset}
         isDragging={isDragging}
+        isAnimating={isAnimating}
       />
 
       {/* Show "Tap to start" overlay if user hasn't interacted yet */}
@@ -258,7 +237,7 @@ export function StationCarousel() {
         stations={stations}
         currentStation={currentStation}
         onStationSelect={handleStationSelect}
-        isTransitioning={isTransitioning}
+        isAnimating={isAnimating}
       />
     </div>
   );
