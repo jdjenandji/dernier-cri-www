@@ -12,6 +12,8 @@ export class AudioCrossfadeEngine {
   private sourceNodes: [MediaElementAudioSourceNode | null, MediaElementAudioSourceNode | null] = [null, null];
   private activeIndex: 0 | 1 = 0;
   private isInitialized = false;
+  private _isMuted = false;
+  private _volume = 1;
 
   constructor() {
     // Create two audio elements for alternating playback
@@ -190,6 +192,68 @@ export class AudioCrossfadeEngine {
     const nextAudio = this.audioElements[nextIndex];
     nextAudio.src = streamUrl;
     nextAudio.load();
+  }
+
+  /**
+   * Mute audio (keeps playing, just silences output)
+   */
+  mute(): void {
+    this._isMuted = true;
+    this.applyVolume(0);
+  }
+
+  /**
+   * Unmute audio (restores previous volume)
+   */
+  unmute(): void {
+    this._isMuted = false;
+    this.applyVolume(this._volume);
+  }
+
+  /**
+   * Toggle mute state
+   */
+  toggleMute(): boolean {
+    if (this._isMuted) {
+      this.unmute();
+    } else {
+      this.mute();
+    }
+    return this._isMuted;
+  }
+
+  /**
+   * Check if muted
+   */
+  get isMuted(): boolean {
+    return this._isMuted;
+  }
+
+  /**
+   * Set volume (0-1)
+   */
+  setVolume(volume: number): void {
+    this._volume = Math.max(0, Math.min(1, volume));
+    if (!this._isMuted) {
+      this.applyVolume(this._volume);
+    }
+  }
+
+  /**
+   * Get current volume
+   */
+  get volume(): number {
+    return this._volume;
+  }
+
+  /**
+   * Apply volume to active gain node
+   */
+  private applyVolume(value: number): void {
+    const gainNode = this.gainNodes[this.activeIndex];
+    if (gainNode && this.audioContext) {
+      gainNode.gain.setValueAtTime(value, this.audioContext.currentTime);
+    }
   }
 
   /**
