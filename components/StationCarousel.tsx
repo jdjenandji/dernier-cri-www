@@ -267,6 +267,7 @@ export function StationCarousel() {
           }}
           className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-black/60 backdrop-blur-md border border-white/30 flex items-center justify-center z-[9999] cursor-pointer active:scale-95 transition-transform"
           style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
+          data-ignore-drag="true"
           aria-label={isMuted ? "Unmute" : "Mute"}
           aria-pressed={isMuted}
         >

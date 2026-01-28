@@ -204,18 +204,23 @@ export function useDrag({
     const shouldIgnoreTarget = (target: EventTarget | null): boolean => {
       if (!target || !(target instanceof HTMLElement)) return false;
       
-      // Ignore if target or ancestor has touch-action: none or is a button
+      // Only check the target and a few levels up (not the whole tree)
+      // because body/html have touch-action: none globally
       let el: HTMLElement | null = target;
-      while (el) {
+      let depth = 0;
+      const maxDepth = 5; // Only check 5 levels up
+      
+      while (el && depth < maxDepth) {
         if (
           el.tagName === 'BUTTON' ||
           el.tagName === 'A' ||
           el.getAttribute('role') === 'button' ||
-          getComputedStyle(el).touchAction === 'none'
+          el.dataset.ignoreDrag === 'true'
         ) {
           return true;
         }
         el = el.parentElement;
+        depth++;
       }
       return false;
     };
