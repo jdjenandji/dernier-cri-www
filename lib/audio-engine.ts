@@ -195,10 +195,14 @@ export class AudioCrossfadeEngine {
   }
 
   /**
-   * Mute audio
+   * Mute audio - uses both HTML element muted property and gain node for reliability
    */
   mute(): void {
     this._isMuted = true;
+    // Mute both audio elements directly (most reliable on mobile)
+    this.audioElements[0].muted = true;
+    this.audioElements[1].muted = true;
+    // Also set gain to 0 as backup
     this.applyVolume(0);
   }
 
@@ -207,6 +211,10 @@ export class AudioCrossfadeEngine {
    */
   unmute(): void {
     this._isMuted = false;
+    // Unmute both audio elements
+    this.audioElements[0].muted = false;
+    this.audioElements[1].muted = false;
+    // Restore gain
     this.applyVolume(this._volume);
   }
 
@@ -235,7 +243,12 @@ export class AudioCrossfadeEngine {
   private applyVolume(value: number): void {
     const gainNode = this.gainNodes[this.activeIndex];
     if (gainNode && this.audioContext) {
-      gainNode.gain.setValueAtTime(value, this.audioContext.currentTime);
+      try {
+        gainNode.gain.setValueAtTime(value, this.audioContext.currentTime);
+      } catch (e) {
+        // Fallback if audio context is suspended
+        gainNode.gain.value = value;
+      }
     }
   }
 
