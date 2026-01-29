@@ -209,7 +209,7 @@ export function StationCarousel() {
 
       {/* Loading indicator */}
       {(audioLoading || isCrossfading) && (
-        <div className="absolute top-8 left-1/2 transform -translate-x-1/2">
+        <div className="fixed top-8 left-1/2 transform -translate-x-1/2 z-50 pointer-events-none">
           <div className="px-4 py-2 bg-white/10 backdrop-blur-md rounded-full">
             <p className="text-sm text-white">
               {isCrossfading ? "Tuning in..." : "Loading..."}
