@@ -98,10 +98,9 @@ export class AudioCrossfadeEngine {
   }
 
   /**
-   * Crossfade to a new stream
-   * Loads the new stream in the inactive element and smoothly transitions
+   * Switch to a new stream instantly (no crossfade)
    */
-  async crossfadeTo(streamUrl: string, duration: number = 1.8): Promise<void> {
+  async crossfadeTo(streamUrl: string, _duration: number = 0): Promise<void> {
     if (!this.isInitialized) {
       await this.initialize();
     }
@@ -123,37 +122,27 @@ export class AudioCrossfadeEngine {
     }
 
     try {
-      // Load the new stream
-      nextAudio.src = streamUrl;
-      nextAudio.load();
+      // Stop current stream immediately
+      currentAudio.pause();
+      currentGain.gain.value = 0;
 
-      // Start playing the new stream (at volume 0)
-      nextGain.gain.setValueAtTime(0, this.audioContext.currentTime);
+      // Load and play the new stream
+      nextAudio.src = streamUrl;
+      nextAudio.muted = this._isMuted;
+      nextAudio.load();
+      
+      // Set volume to full (or 0 if muted)
+      nextGain.gain.value = this._isMuted ? 0 : this._volume;
+      
       await nextAudio.play();
 
-      // Perform crossfade
-      const now = this.audioContext.currentTime;
-      const fadeEndTime = now + duration;
-
-      // Fade out current stream
-      currentGain.gain.setValueAtTime(currentGain.gain.value, now);
-      currentGain.gain.linearRampToValueAtTime(0, fadeEndTime);
-
-      // Fade in next stream
-      nextGain.gain.setValueAtTime(0, now);
-      nextGain.gain.linearRampToValueAtTime(1, fadeEndTime);
-
-      // Wait for crossfade to complete
-      await new Promise((resolve) => setTimeout(resolve, duration * 1000));
-
-      // Stop and cleanup the old stream
-      currentAudio.pause();
+      // Cleanup old stream
       currentAudio.src = "";
 
       // Switch active index
       this.activeIndex = nextIndex;
     } catch (error) {
-      console.error("Failed to crossfade:", error);
+      console.error("Failed to switch station:", error);
       throw error;
     }
   }
