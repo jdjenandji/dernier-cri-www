@@ -19,6 +19,18 @@ export const metadata: Metadata = {
   description: "Global Radio Stations",
   keywords: ["radio", "streaming", "live", "music", "global", "stations", "ambient"],
   authors: [{ name: "FOUND FM" }],
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "FOUND FM",
+  },
+  icons: {
+    icon: "/icon.png",
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
   openGraph: {
     title: "FOUND FM",
     description: "Global Radio Stations",
