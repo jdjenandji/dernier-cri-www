@@ -10,6 +10,7 @@ import { useStationNavigation } from "@/contexts/StationContext";
 import { useAudio } from "@/contexts/AudioContext";
 import { useDrag } from "@/hooks/useDrag";
 import { useKeyboardNav } from "@/hooks/useKeyboardNav";
+import { useListenerCount } from "@/hooks/useListenerCount";
 
 export function StationCarousel() {
   const {
@@ -39,6 +40,7 @@ export function StationCarousel() {
 
   const [hasUserInteracted, setHasUserInteracted] = useState(false);
   const videoCarouselRef = useRef<VideoCarouselRef>(null);
+  const listenerCount = useListenerCount();
 
   // Preload all audio streams on mount
   useEffect(() => {
@@ -202,6 +204,18 @@ export function StationCarousel() {
             </p>
             <p className="text-sm text-gray-400 mt-2 hidden md:block">
               Use arrow keys to navigate
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Listener count */}
+      {hasUserInteracted && listenerCount > 0 && (
+        <div className="fixed top-6 left-6 z-50 pointer-events-none">
+          <div className="px-3 py-1.5 bg-white/10 backdrop-blur-md rounded-full flex items-center gap-2">
+            <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+            <p className="text-sm text-white">
+              {listenerCount} {listenerCount === 1 ? 'listener' : 'listeners'}
             </p>
           </div>
         </div>
