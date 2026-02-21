@@ -233,33 +233,16 @@ export function StationCarousel() {
                   key={station.id}
                   onClick={() => handleStationSelect(index)}
                   className={`
-                    relative p-4 rounded-xl transition-all duration-200 active:scale-95
+                    relative px-3 py-2 rounded-xl transition-all duration-200 active:scale-95
                     ${index === currentIndex
                       ? 'bg-white/20 border-2 border-white shadow-lg'
                       : 'bg-white/5 border-2 border-transparent hover:bg-white/10 hover:border-white/20'
                     }
                   `}
                 >
-                  {/* Station logo */}
-                  <div className="relative w-12 h-12 rounded-lg overflow-hidden mb-3 mx-auto">
-                    <Image
-                      src={station.logo_url}
-                      alt={`${station.name} logo`}
-                      fill
-                      className="object-cover"
-                      sizes="48px"
-                    />
-                  </div>
-
-                  {/* Station name */}
-                  <div className="text-center">
-                    <p className="text-white text-xs font-medium leading-tight line-clamp-2">
-                      {station.name}
-                    </p>
-                    <p className="text-gray-400 text-xs mt-1 leading-tight">
-                      {station.city || station.country}
-                    </p>
-                  </div>
+                  <p className="text-white text-xs font-medium leading-tight line-clamp-2 text-center">
+                    {station.name}
+                  </p>
                 </button>
               ))}
             </div>
