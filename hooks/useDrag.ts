@@ -46,6 +46,12 @@ function springStep(
   return { position: newPosition, velocity: newVelocity };
 }
 
+// Helper function to detect if we're on mobile (tablet/phone)
+function isMobile(): boolean {
+  if (typeof window === 'undefined') return false;
+  return window.innerWidth < 768; // Tailwind md breakpoint
+}
+
 export function useDrag({
   onNext,
   onPrevious,
@@ -227,6 +233,9 @@ export function useDrag({
 
     // Touch event handlers
     const handleTouchStart = (e: TouchEvent) => {
+      // Disable drag on mobile devices
+      if (isMobile()) return;
+
       // Ignore if starting on an interactive element
       if (shouldIgnoreTarget(e.target)) return;
 
@@ -295,6 +304,9 @@ export function useDrag({
 
     // Mouse event handlers
     const handleMouseDown = (e: MouseEvent) => {
+      // Disable drag on mobile devices
+      if (isMobile()) return;
+
       // Ignore if starting on an interactive element
       if (shouldIgnoreTarget(e.target)) return;
 
