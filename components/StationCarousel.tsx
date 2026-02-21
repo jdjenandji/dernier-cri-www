@@ -9,6 +9,7 @@ function isMobile(): boolean {
 }
 import Image from "next/image";
 import { VideoCarousel, VideoCarouselRef } from "./VideoCarousel";
+import { YouTubeLoopPlayer, YouTubeLoopPlayerRef, extractYouTubeVideoId } from "./YouTubeLoopPlayer";
 import { LoadingState } from "./LoadingState";
 import { ErrorState } from "./ErrorState";
 import { StationSidebar } from "./StationSidebar";
@@ -47,6 +48,7 @@ export function StationCarousel() {
   const [hasUserInteracted, setHasUserInteracted] = useState(false);
   const [mobileView, setMobileView] = useState(false);
   const videoCarouselRef = useRef<VideoCarouselRef>(null);
+  const mobileVideoRef = useRef<YouTubeLoopPlayerRef>(null);
   const listenerCount = useListenerCount();
 
   // Track mobile state and update on resize
@@ -146,7 +148,11 @@ export function StationCarousel() {
     if (!currentStation) return;
     setHasUserInteracted(true);
     // Play all YouTube videos (requires user gesture on mobile)
-    videoCarouselRef.current?.playAllVideos();
+    if (mobileView) {
+      mobileVideoRef.current?.play();
+    } else {
+      videoCarouselRef.current?.playAllVideos();
+    }
     await playStation(currentStation);
   };
 
@@ -180,31 +186,27 @@ export function StationCarousel() {
   if (mobileView) {
     return (
       <div className="relative w-full h-full overflow-hidden bg-black">
-        {/* Top section: Current station video/logo and info (50-60% of screen) */}
+        {/* Top section: Current station video and info (50-60% of screen) */}
         <div className="relative h-[60%] flex flex-col items-center justify-center">
           {currentStation && (
-            <div className="flex flex-col items-center gap-6 max-w-md px-8">
-              {/* Station Video/Logo */}
-              <div className="relative w-40 h-40 rounded-2xl overflow-hidden shadow-2xl">
+            <div className="flex flex-col items-center gap-4 w-full px-4">
+              {/* Station Video/Logo - larger for mobile */}
+              <div className="relative w-48 h-48 rounded-2xl overflow-hidden shadow-2xl">
                 {currentStation.video_url ? (
-                  <div className="absolute inset-0 bg-black">
-                    {/* For mobile, we'll keep it simple and show logo instead of video for performance */}
-                    <Image
-                      src={currentStation.logo_url}
-                      alt={`${currentStation.name} logo`}
-                      fill
-                      className="object-cover"
-                      sizes="160px"
-                      priority
-                    />
-                  </div>
+                  <YouTubeLoopPlayer
+                    ref={mobileVideoRef}
+                    videoId={extractYouTubeVideoId(currentStation.video_url) || ""}
+                    startTime={currentStation.video_start_time}
+                    endTime={currentStation.video_end_time}
+                    className="absolute inset-0"
+                  />
                 ) : (
                   <Image
                     src={currentStation.logo_url}
                     alt={`${currentStation.name} logo`}
                     fill
                     className="object-cover"
-                    sizes="160px"
+                    sizes="192px"
                     priority
                   />
                 )}
@@ -212,7 +214,7 @@ export function StationCarousel() {
 
               {/* Station Info */}
               <div className="text-center">
-                <h1 className="text-xl font-medium text-white mb-2">{currentStation.name}</h1>
+                <h1 className="text-xl font-medium text-white mb-1">{currentStation.name}</h1>
                 <p className="text-gray-400 text-sm">
                   {currentStation.city && `${currentStation.city}, `}
                   {currentStation.country}
