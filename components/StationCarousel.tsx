@@ -227,7 +227,7 @@ export function StationCarousel() {
         {/* Bottom section: Soundboard grid (40-50% of screen) */}
         <div className="absolute bottom-0 left-0 right-0 h-[40%] bg-black/95 border-t border-gray-800">
           <div className="h-full overflow-y-auto p-4">
-            <div className="grid grid-cols-2 gap-3 pb-20"> {/* Extra bottom padding for mute button */}
+            <div className="grid grid-cols-2 gap-3 pb-4">
               {stations.map((station, index) => (
                 <button
                   key={station.id}
@@ -316,7 +316,7 @@ export function StationCarousel() {
           </div>
         )}
 
-        {/* Mute button - bottom right, works on mobile */}
+        {/* Mute button - top right on mobile */}
         {hasUserInteracted && (
           <div
             role="button"
@@ -339,7 +339,7 @@ export function StationCarousel() {
                 toggleMute();
               }
             }}
-            className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-black/60 backdrop-blur-md border border-white/30 flex items-center justify-center z-[9999] cursor-pointer active:scale-95 transition-transform"
+            className="fixed top-6 right-6 w-14 h-14 rounded-full bg-black/60 backdrop-blur-md border border-white/30 flex items-center justify-center z-[9999] cursor-pointer active:scale-95 transition-transform"
             style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
             data-ignore-drag="true"
             aria-label={isMuted ? "Unmute" : "Mute"}
